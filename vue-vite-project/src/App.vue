@@ -1,0 +1,30 @@
+<script setup>
+
+import OptionsTest from "./components/api/optionsTest.vue";
+import Component01 from "./components/component01.vue";
+import CompositionTest from "./components/api/compositionTest.vue";
+import CompositionWithOutSetupTest from "./components/api/compositionWithOutSetupTest.vue";
+import Header from "./components/Header.vue";
+import IndexPage from "./pages/index/indexPage.vue";
+import NavBar from "./components/NavBar.vue";
+</script>
+
+<template>
+  <EventPages></EventPages>
+  <nav-bar></nav-bar>
+</template>
+
+<style scoped>
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.vue:hover {
+  filter: drop-shadow(0 0 2em #42b883aa);
+}
+</style>
