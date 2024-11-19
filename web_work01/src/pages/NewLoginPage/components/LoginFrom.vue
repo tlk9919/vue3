@@ -1,45 +1,49 @@
 <script>
-import {ref} from 'vue';
-import http from '@/utils/api.js'
-// import {useRouter} from "vue-router";
-import router from "@/router/index.js"
+import { ref } from 'vue';
+import http from '@/utils/api.js';
+import router from "@/router/index.js";
 
 export default {
   setup() {
-    // const router = useRouter()
-    const password = ref('')
-    const username = ref('')
+    const password = ref('');
+    const username = ref('');
     const handleLogin = async () => {
       try {
         const response = await http.post("/login", {
           username: username.value,
-          password: password.value
-        })
-        console.log(response)
+          password: password.value,
+        });
+
+        console.log('Login Response:', response);  // 打印整个响应对象
+
         if (response.accessToken) {
-          console.log("a")
-          localStorage.setItem('userToken', response.accessToken)
-          await router.push('/app')
+          // 保存 token
+          localStorage.setItem('userToken', response.accessToken);
+
+          // 保存用户名
+          localStorage.setItem('username', response.username);  // 存储用户名
+          console.log('Username Stored:', response.username);  // 确保用户名已存储
+
+          // 跳转到后台管理页面
+          await router.push('/admin');
         }
       } catch (err) {
-        console.error(err)
+        console.error(err);
       }
-    }
-
+    };
     return {
       username,
       password,
       handleLogin
-    }
+    };
   }
-}
-
+};
 </script>
 
 <template>
   <div style="display: flex;align-items: center;justify-content: center;height: 100vh;">
     <div
-        style="background-color: white;padding: 40px;border-radius: 8px;box-shadow: 0 4px 8px rgba(0,0,0,0.1);max-width: 400px;width: 100%"
+        style="background-color: rgba(255, 255, 255, 0.8);padding: 40px;border-radius: 8px;box-shadow: 0 4px 8px rgba(0,0,0,0.1);max-width: 400px;width: 100%;backdrop-filter: blur(10px);"
     >
       <h1
           style="text-align: center;color: #d81b60;font-size: 24px;margin-bottom: 20px;"
@@ -75,11 +79,8 @@ export default {
           登陆
         </button>
       </form>
-
     </div>
-
   </div>
-
 </template>
 
 <style scoped>

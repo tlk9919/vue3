@@ -1,7 +1,9 @@
 import MainPage from "@/pages/MainPage/MainPage.vue";
-import About from "@/components/About.vue";
 import Menu from "@/components/Menu.vue";
 import Home from "@/components/Home.vue";
+import Admin from "@/pages/DashBoard/Admin.vue";
+import Log from "@/components/Log.vue";
+import LogsDetails from "@/components/LogsDetails.vue";
 
 const routes = [
     {
@@ -16,32 +18,46 @@ const routes = [
     },
 
     {
-        path: '/home',
-        name: 'home',
+        path: '/admin',
+        name: 'admin',
         title: '后台',
-        component: Home,
-        meta: {
-            requireAuth: true
-        }
-    },
-    {
-        path: '/about',
-        name: 'about',
-        component: About,
+        component: Admin,
         meta: { requiresAuth: true },  // 需要登录才能访问
+        children: [
+            {
+                path: '/log',
+                name: 'log',
+                component: Log,
+                meta: { requiresAuth: true },  // 需要登录才能访问
+                children: [{
+                    name:'logs',
+                    path:'logsDetails/:id/:title/:content',
+                    component:LogsDetails,
+                    meta: { requiresAuth: true },  // 需要登录才能访问
+                    props:true
+                    // props(route){
+                    //     return route.params
+                    // }
+                }]
+            },
+            {
+                path:'/menu',
+                name: 'menu',
+                component: Menu,
+                meta: { requiresAuth: true },  // 需要登录才能访问
+            },
+            {
+                path:'/home',
+                name:'home',
+                component: Home,
+                meta: { requiresAuth: true },  // 需要登录才能访问
+            }
+
+        ]
+
     },
-    {
-        path:'/menu',
-        name: 'menu',
-        component: Menu,
-        meta: { requiresAuth: true },  // 需要登录才能访问
-    },
-    {
-        path:'/home',
-        name:'home',
-        component: Home,
-        meta: { requiresAuth: true },  // 需要登录才能访问
-    }
+
+
 
 ]
 export default routes;

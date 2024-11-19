@@ -11,12 +11,15 @@ const router = createRouter({
 })
 //前置路由守卫
 router.beforeEach((to, from, next) => {
-    const requireAuth = to.matched.some(record => record.meta.requireAuth)
-    const userLoggedIn = localStorage.getItem('userToken')
-    if (requireAuth && !userLoggedIn) {
-        next('/login')
+    const requiresAuth = to.matched.some(record => record.meta.requiresAuth); // 确保一致
+    const userLoggedIn = localStorage.getItem('userToken');
+
+    if (requiresAuth && !userLoggedIn) {
+        next('/'); // 跳转到登录页面（假设登录路径为 `/`）
+    } else {
+        next(); // 允许继续导航
     }
-    next()
-})
+});
+
 
 export default router
