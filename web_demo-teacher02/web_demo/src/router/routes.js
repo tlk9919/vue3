@@ -2,10 +2,6 @@ import MainPage from "@/pages/MainPage/MainPage.vue";
 
 const routes = [
     {
-        //path 代表的是路径
-        //name 路由的名称
-        //title 页面的标题
-        //component 对应组件的名称
         path: '/',
         name: 'index',
         title: '首页',
@@ -39,27 +35,15 @@ const routes = [
         component: () => import('@/pages/InfoPage/InfoPage.vue'),
         meta: {
             requireAuth: true
-        }
+        },
+        children: [
+            {
+                path: '',
+                name: 'InfoDashboard',
+                component: () => import('@/pages/DashBoard/DashBoard.vue')
+            }
+            // 动态路由的子路由会通过 menuStore 中的 registerRoutes 方法添加
+        ]
     }
-//     }, children: [
-//         {
-//             name: 'Page1',
-//             path: '/InfoPage/Page1',
-//             component: () => import('@/pages/InfoPage/views/Page1.vue')
-//
-//         },
-//         {
-//             name: "Page2",
-//             path: '/InfoPage/Page2',
-//             component: () => import('@/pages/InfoPage/views/Page2.vue')
-//         },
-//         {
-//             name: "Page3",
-//             path: '/InfoPage/Page3',
-//             component: () => import('@/pages/InfoPage/views/Page3.vue')
-//         }
-//
-//     ]
-// }
 ]
 export default routes;

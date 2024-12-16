@@ -25,11 +25,11 @@ export default {
 </script>
 
 <template>
-  <el-container class="info-page-container">
+  <div class="info-page">
     <el-header height="60px">
       <NavBar/>
     </el-header>
-    <el-container>
+    <el-container class="main-container">
       <el-aside width="200px">
         <SideMenu/>
       </el-aside>
@@ -37,15 +37,20 @@ export default {
         <router-view></router-view>
       </el-main>
     </el-container>
-  </el-container>
-
-
+  </div>
 </template>
 
 <style scoped>
-.info-page-container {
-  height: 100vh;
-  width: 100vw;
+.info-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.main-container {
+  flex: 1;
+  display: flex;
 }
 
 .el-header {
@@ -55,11 +60,13 @@ export default {
 
 .el-aside {
   width: 200px;
+  background-color: #304156;
+  flex-shrink: 0;
 }
 
 .el-main {
-  padding: 0;
-  width: calc(100% - 200px);
-  overflow-x: hidden;
+  padding: 20px;
+  background-color: #f0f2f5;
+  flex: 1;
 }
 </style>

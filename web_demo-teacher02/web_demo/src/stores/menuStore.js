@@ -12,8 +12,8 @@ export const useMenuStore = defineStore("menuStore", () => {
         const processMenu = (items) => {
             items.forEach(item => {
                 if (!router.hasRoute(item.name)) {
-                    router.addRoute({
-                        path: item.path,
+                    router.addRoute('InfoPage', {
+                        path: item.name,
                         name: item.name,
                         component: () => import(`@/pages/InfoPage/views/${item.name}.vue`),
                     });

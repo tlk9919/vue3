@@ -52,10 +52,22 @@ console.log(echarts)
 </script>
 
 <template>
-  <h1>DashBoard</h1>
-  <div ref="chartRef" style="width: 600px;height: 400px"></div>
+  <div class="dashboard">
+    <h1>DashBoard</h1>
+    <div ref="chartRef" class="chart"></div>
+  </div>
 </template>
 
 <style scoped>
+.dashboard {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 
+.chart {
+  width: 800px;
+  height: 400px;
+}
 </style>

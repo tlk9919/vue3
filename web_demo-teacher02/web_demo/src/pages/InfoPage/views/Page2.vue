@@ -62,9 +62,9 @@ const initChart = (data) => {
       },
       grid: {
         left: '0%',
-        right: '0%',
-        bottom: '20%',
-        top: '10%',
+        right: '10%',
+        bottom: '50%',
+        top: '5%',
         containLabel: true
       },
       xAxis: {
@@ -120,7 +120,7 @@ onMounted(() => {
 
 <style scoped>
 .page-container {
-  padding: 20px;
+  padding: 10px;
   background-color: #f0f2f5;
   min-height: calc(100vh - 60px);
   width: 100%;
@@ -159,7 +159,7 @@ onMounted(() => {
 
 .chart-container {
   height: calc(100% - 50px);
-  width: 90%;
+  width: 100%;
   min-height: 300px;
 }
 

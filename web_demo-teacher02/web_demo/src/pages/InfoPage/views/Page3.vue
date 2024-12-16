@@ -92,12 +92,11 @@ onMounted(() => {
 <style scoped>
 .page-container {
   padding: 20px;
-  background-color: #f0f2f5;
-  min-height: 100%;
+  box-sizing: border-box;
 }
 
 .main-card {
-  width: 100%;
+  height: auto;
 }
 
 .card-header {
@@ -116,6 +115,6 @@ onMounted(() => {
 }
 
 :deep(.el-table) {
-  height: calc(100vh - 180px);
+  height: 600px;
 }
 </style>

@@ -14,7 +14,7 @@
         :data="tableData" 
         border 
         v-loading="loading"
-        height="calc(100vh - 180px)"
+        height="600px"
       >
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="姓名" width="120" />
@@ -164,15 +164,11 @@ onMounted(() => {
 <style scoped>
 .page-container {
   padding: 20px;
-  background-color: #f0f2f5;
-  min-height: calc(100vh - 60px);
-  width: 100%;
   box-sizing: border-box;
 }
 
 .main-card {
-  width: 100%;
-  height: calc(100vh - 100px);
+  height: auto;
 }
 
 .card-header {
@@ -190,10 +186,9 @@ onMounted(() => {
 
 :deep(.el-card__body) {
   padding: 0;
-  height: calc(100% - 60px);
 }
 
 :deep(.el-table) {
-  height: 100%;
+  height: 600px;
 }
 </style>
