@@ -13,13 +13,18 @@ export default {
     console.log(userStore)
     const {userInfo} = storeToRefs(userStore)
     const handleLogin = async () => {
-      await userStore.getUserInfo(
-          {
-            username: username.value,
-            password: password.value
-          }
-      )
-      await router.push('/InfoPage')
+      try {
+        console.log('尝试登录:', { username: username.value, password: password.value })
+        const res = await userStore.getUserInfo({
+          username: username.value,
+          password: password.value
+        })
+        console.log('登录响应:', res)
+        await router.push('/InfoPage')
+      } catch (error) {
+        console.error('登录错误:', error)
+        alert(error.message || '登录失败')
+      }
     }
     console.log(userInfo)
 

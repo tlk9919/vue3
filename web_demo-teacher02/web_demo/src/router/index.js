@@ -15,11 +15,18 @@ router.beforeEach((to, from, next) => {
     const user = useUserStore()
     const requireAuth = to.matched.some(record => record.meta.requireAuth)
     const userLoggedIn = user.getUserToken
-    // const userLoggedIn = localStorage.getItem('userToken')
+    
+    console.log('路由守卫:', {
+        path: to.path,
+        requireAuth,
+        userLoggedIn
+    })
+
     if (requireAuth && !userLoggedIn) {
         next('/newlogin')
+    } else {
+        next()
     }
-    next()
 })
 router.hasRoute = function (name) {
     return !!this.getRoutes().find(route => route.name === name)

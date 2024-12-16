@@ -24,33 +24,34 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import axios from '@/utils/axios.js'
 import * as echarts from 'echarts'
 import { ElMessage } from 'element-plus'
+import { useProductStore } from '@/stores/productStore'
 
+const productStore = useProductStore()
 const statistics = ref([])
 const chartRef = ref(null)
 let chart = null
 const loading = ref(false)
 
 const fetchData = async () => {
-  loading.value = true
-  try {
-    const response = await axios.get('/page2-data')
-    statistics.value = [
-      { label: '总用户数', value: response.totalUsers },
-      { label: '活跃用户', value: response.activeUsers },
-      { label: '总订单数', value: response.totalOrders },
-      { label: '待处理订单', value: response.pendingOrders }
-    ]
-    if (response.weeklyStats) {
-      initChart(response.weeklyStats)
+    loading.value = true
+    try {
+        const response = await productStore.fetchProductStats()
+        statistics.value = [
+            { label: '总用户数', value: response.totalUsers },
+            { label: '活跃用户', value: response.activeUsers },
+            { label: '总订单数', value: response.totalOrders },
+            { label: '待处理订单', value: response.pendingOrders }
+        ]
+        if (response.weeklyStats) {
+            initChart(response.weeklyStats)
+        }
+    } catch (error) {
+        ElMessage.error(error.message)
+    } finally {
+        loading.value = false
     }
-  } catch (error) {
-    ElMessage.error('获取数据失败')
-  } finally {
-    loading.value = false
-  }
 }
 
 const initChart = (data) => {

@@ -9,12 +9,12 @@
           </el-button>
         </div>
       </template>
-      
-      <el-table 
-        :data="tableData" 
-        border 
-        v-loading="loading"
-        height="600px"
+
+      <el-table
+          :data="tableData"
+          border
+          v-loading="loading"
+          height="600px"
       >
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="name" label="姓名" width="120" />
@@ -34,15 +34,15 @@
 
     <!-- 添加/编辑用户对话框 -->
     <el-dialog
-      v-model="dialogVisible"
-      :title="dialogType === 'add' ? '添加用户' : '编辑用户'"
-      width="500px"
+        v-model="dialogVisible"
+        :title="dialogType === 'add' ? '添加用户' : '编辑用户'"
+        width="500px"
     >
       <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        label-width="80px"
+          ref="formRef"
+          :model="form"
+          :rules="rules"
+          label-width="80px"
       >
         <el-form-item label="用户名" prop="name">
           <el-input v-model="form.name" />
@@ -64,13 +64,44 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 添加删除确认对��框 -->
+    <el-dialog
+        v-model="deleteVisible"
+        title="提示"
+        width="300px"
+        center
+    >
+      <span>确定要删除该用户吗？</span>
+      <template #footer>
+        <span>
+          <el-button @click="deleteVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmDelete">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 添加通用提示对话框 -->
+    <el-dialog
+        v-model="messageVisible"
+        title="提示"
+        width="300px"
+        center
+    >
+      <span>{{ messageText }}</span>
+      <template #footer>
+        <span>
+          <el-button type="primary" @click="messageVisible = false">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from '@/utils/axios.js'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/userStore'
 
@@ -80,6 +111,10 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const dialogType = ref('add')
 const formRef = ref(null)
+const deleteVisible = ref(false)
+const deleteRow = ref(null)
+const messageVisible = ref(false)
+const messageText = ref('')
 
 const form = ref({
   name: '',
@@ -98,10 +133,10 @@ const rules = {
 const fetchData = async () => {
   loading.value = true
   try {
-    const response = await axios.get('/page1-data')
+    const response = await axios.get('/users')
     tableData.value = response
   } catch (error) {
-    ElMessage.error('获取数据失败')
+    showMessage('获取数据失败')
   } finally {
     loading.value = false
   }
@@ -124,36 +159,47 @@ const handleEdit = (row) => {
   dialogVisible.value = true
 }
 
-const handleDelete = async (row) => {
+const handleDelete = (row) => {
+  deleteRow.value = row
+  deleteVisible.value = true
+}
+
+const confirmDelete = async () => {
   try {
-    await userStore.clearUserInfo()  // 使用 userStore 的方法
-    ElMessage.success('删除成功')
+    await userStore.deleteUser(deleteRow.value.id)
+    showMessage('删除成功')
+    deleteVisible.value = false
     fetchData()
   } catch (error) {
-    ElMessage.error('删除失败')
+    showMessage(error.message || '删除失败')
   }
 }
 
 const submitForm = async () => {
   if (!formRef.value) return
-  
+
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
         if (dialogType.value === 'add') {
-          await userStore.getUserInfo(form.value)  // 使用 userStore 的方法
-          ElMessage.success('添加成功')
+          await userStore.addUser(form.value)
+          showMessage('添加成功')
         } else {
-          // 编辑用户信息的逻辑
-          ElMessage.success('编辑成功')
+          await userStore.updateUser(form.value.id, form.value)
+          showMessage('编辑成功')
         }
         dialogVisible.value = false
         fetchData()
       } catch (error) {
-        ElMessage.error('操作失败')
+        showMessage(error.message || '操作失败')
       }
     }
   })
+}
+
+const showMessage = (message) => {
+  messageText.value = message
+  messageVisible.value = true
 }
 
 onMounted(() => {

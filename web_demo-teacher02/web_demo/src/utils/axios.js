@@ -18,8 +18,11 @@ const instance = axios.create({
 instance.interceptors.request.use(
     config => {
     const userStore = useUserStore();
-    // const token = userStore.getUserToken()
-    const token=userStore.userInfo.token;
+    const token = userStore.userInfo.token;
+    console.log('发送请求:', {
+        url: config.url,
+        token: token  // 检查 token 是否存在
+    })
     if (token) {
         // 如果存在 token，则将其添加到请求头中的 Authorization 字段
         config.headers.Authorization = `Bearer ${token}`

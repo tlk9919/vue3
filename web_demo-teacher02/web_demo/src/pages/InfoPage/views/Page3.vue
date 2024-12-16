@@ -4,6 +4,7 @@
       <template #header>
         <div class="card-header">
           <span class="title">商品管理</span>
+          <el-button type="primary" @click="handleAdd">添加商品</el-button>
         </div>
       </template>
 
@@ -27,61 +28,160 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="操作" width="200" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button type="danger" link @click="confirmDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 添加/编辑商品对话框 -->
+    <el-dialog
+      :title="dialogType === 'add' ? '添加商品' : '编辑商品'"
+      v-model="dialogVisible"
+      width="500px"
+    >
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="100px"
+      >
+        <el-form-item label="商品名称" prop="name">
+          <el-input v-model="form.name" />
+        </el-form-item>
+        <el-form-item label="类别" prop="category">
+          <el-select v-model="form.category" placeholder="请选择类别">
+            <el-option
+              v-for="item in categories"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="价格" prop="price">
+          <el-input-number v-model="form.price" :min="0" :precision="2" />
+        </el-form-item>
+        <el-form-item label="库存" prop="stock">
+          <el-input-number v-model="form.stock" :min="0" :precision="0" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitForm">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from '@/utils/axios.js'
-import { ElMessage } from 'element-plus'
-import { useUserStore } from '@/stores/userStore'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { useProductStore } from '@/stores/productStore'
 
-const userStore = useUserStore()
+const productStore = useProductStore()
 const products = ref([])
 const loading = ref(false)
+const dialogVisible = ref(false)
+const dialogType = ref('add')
+const formRef = ref(null)
 
+// 商品类别选项
+const categories = ['电子产品', '服装', '食品', '图书', '其他']
+
+// 表单数据
+const form = ref({
+  name: '',
+  category: '',
+  price: 0,
+  stock: 0
+})
+
+// 表单验证规则
+const rules = {
+  name: [{ required: true, message: '请输入商品名称', trigger: 'blur' }],
+  category: [{ required: true, message: '请选择商品类别', trigger: 'change' }],
+  price: [{ required: true, message: '请输入商品价格', trigger: 'blur' }],
+  stock: [{ required: true, message: '请输入商品库存', trigger: 'blur' }]
+}
+
+// 获取商品列表
 const fetchData = async () => {
   loading.value = true
   try {
-    const response = await axios.get('/page3-data')
-    products.value = response.recentProducts
+    await productStore.fetchProducts()
+    products.value = productStore.products
   } catch (error) {
-    ElMessage.error('获取数据失败')
+    ElMessage.error(error.message)
   } finally {
     loading.value = false
   }
 }
 
-const handleAdd = async (formData) => {
-  try {
-    await axios.post('/page3-data', formData)
-    ElMessage.success('添加成功')
-    fetchData()
-  } catch (error) {
-    ElMessage.error('添加失败')
+// 打开添加商品对话框
+const handleAdd = () => {
+  dialogType.value = 'add'
+  form.value = {
+    name: '',
+    category: '',
+    price: 0,
+    stock: 0
   }
+  dialogVisible.value = true
 }
 
-const handleEdit = async (id, formData) => {
-  try {
-    await axios.put(`/page3-data/${id}`, formData)
-    ElMessage.success('更新成功')
-    fetchData()
-  } catch (error) {
-    ElMessage.error('更新失败')
-  }
+// 打开编辑商品对话框
+const handleEdit = (row) => {
+  dialogType.value = 'edit'
+  form.value = { ...row }
+  dialogVisible.value = true
 }
 
-const handleDelete = async (id) => {
-  try {
-    await axios.delete(`/page3-data/${id}`)
-    ElMessage.success('删除成功')
-    fetchData()
-  } catch (error) {
-    ElMessage.error('删除失败')
-  }
+// 确认删除
+const confirmDelete = (row) => {
+  ElMessageBox.confirm(
+    `确定要删除商品"${row.name}"吗？`,
+    '提示',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      await productStore.deleteProduct(row.id)
+      ElMessage.success('删除成功')
+      fetchData()
+    } catch (error) {
+      ElMessage.error(error.message)
+    }
+  })
+}
+
+// 提交表单
+const submitForm = async () => {
+  if (!formRef.value) return
+  
+  await formRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        if (dialogType.value === 'add') {
+          await productStore.addProduct(form.value)
+          ElMessage.success('添加成功')
+        } else {
+          await productStore.updateProduct(form.value.id, form.value)
+          ElMessage.success('更新成功')
+        }
+        dialogVisible.value = false
+        fetchData()
+      } catch (error) {
+        ElMessage.error(error.message)
+      }
+    }
+  })
 }
 
 onMounted(() => {
@@ -102,6 +202,9 @@ onMounted(() => {
 .card-header {
   padding: 15px 20px;
   border-bottom: 1px solid #ebeef5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .title {
@@ -116,5 +219,9 @@ onMounted(() => {
 
 :deep(.el-table) {
   height: 600px;
+}
+
+.el-form-item {
+  margin-bottom: 20px;
 }
 </style>
