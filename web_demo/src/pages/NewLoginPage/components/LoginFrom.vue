@@ -1,30 +1,32 @@
 <script>
 import {ref} from 'vue';
-import http from '@/utils/api.js'
-// import {useRouter} from "vue-router";
 import router from "@/router/index.js"
+import {useUserStore} from "@/stores/userStore.js";
+import {storeToRefs} from "pinia";
 
 export default {
   setup() {
     // const router = useRouter()
     const password = ref('')
     const username = ref('')
+    const userStore = useUserStore()
+    console.log(userStore)
+    const {userInfo} = storeToRefs(userStore)
     const handleLogin = async () => {
       try {
-        const response = await http.post("/login", {
+        console.log('尝试登录:', { username: username.value, password: password.value })
+        const res = await userStore.getUserInfo({
           username: username.value,
           password: password.value
         })
-        console.log(response)
-        if (response.accessToken) {
-          console.log("a")
-          localStorage.setItem('userToken', response.accessToken)
-          await router.push('/dashboard')
-        }
-      } catch (err) {
-        console.error(err)
+        console.log('登录响应:', res)
+        await router.push('/InfoPage')
+      } catch (error) {
+        console.error('登录错误:', error)
+        alert(error.message || '登录失败')
       }
     }
+    console.log(userInfo)
 
     return {
       username,

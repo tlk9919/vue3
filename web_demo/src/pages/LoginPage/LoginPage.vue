@@ -1,6 +1,6 @@
 <script>
 import {ref} from "vue";
-import http from '@/utils/api.js'
+import http from '@/utils/axios.js'
 import {useRouter} from "vue-router";
 import router from "@/router/index.js";
 
