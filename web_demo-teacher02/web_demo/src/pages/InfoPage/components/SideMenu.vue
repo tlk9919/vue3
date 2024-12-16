@@ -27,13 +27,13 @@ export default {
   >
     <template v-for="menu in menuItems" :key="menu.path">
       <el-sub-menu v-if="menu.children && menu.children.length" :index="menu.path">
-        <template #title>{{ menu.name }}</template>
+        <template #title>{{ menu.title || menu.name }}</template>
         <el-menu-item v-for="sub in menu.children" :key="sub.path" :index="sub.path">
-          {{ sub.name }}
+          {{ sub.title || sub.name }}
         </el-menu-item>
       </el-sub-menu>
       <el-menu-item v-else :index="menu.path">
-        {{ menu.name }}
+        {{ menu.title || menu.name }}
       </el-menu-item>
     </template>
   </el-menu>

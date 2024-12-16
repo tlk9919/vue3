@@ -106,6 +106,7 @@ const db = {
     menu: [{
         name: 'InfoPage',
         path: '/InfoPage',
+        title: '系统管理',
         children: [
             { name: 'Page1', path: '/InfoPage/Page1', title: '用户管理' },
             { name: "Page2", path: '/InfoPage/Page2', title: '数据统计' },
@@ -264,6 +265,25 @@ app.get('/api/data', authenticateToken, (req, res) => {
         title: '热销商品TOP5'
     }
     res.status(200).json(chartData)
+})
+
+// 登出路由
+app.post('/api/logout', authenticateToken, (req, res) => {
+    const authHeader = req.headers['authorization']
+    const token = authHeader && authHeader.split(' ')[1]
+    
+    if (token) {
+        // 遍历所有用户，找到对应token并移除
+        Object.values(db.auth).forEach(user => {
+            const tokenIndex = user.tokens.indexOf(token)
+            if (tokenIndex !== -1) {
+                user.tokens.splice(tokenIndex, 1)
+            }
+        })
+        res.status(200).json({ message: 'Logout successful' })
+    } else {
+        res.status(400).json({ message: 'No token provided' })
+    }
 })
 
 const PORT = process.env.PORT || 5050;

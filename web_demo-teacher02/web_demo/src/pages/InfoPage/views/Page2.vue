@@ -19,39 +19,47 @@
       </template>
       <div ref="chartRef" class="chart-container"></div>
     </el-card>
+
+    <!-- 添加消息对话框 -->
+    <message-dialog ref="messageDialogRef" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
-import { ElMessage } from 'element-plus'
 import { useProductStore } from '@/stores/productStore'
+import MessageDialog from '@/components/MessageDialog.vue'
 
 const productStore = useProductStore()
+const messageDialogRef = ref(null)
 const statistics = ref([])
 const chartRef = ref(null)
 let chart = null
 const loading = ref(false)
 
+const showMessage = (message) => {
+  messageDialogRef.value?.showMessage(message)
+}
+
 const fetchData = async () => {
-    loading.value = true
-    try {
-        const response = await productStore.fetchProductStats()
-        statistics.value = [
-            { label: '总用户数', value: response.totalUsers },
-            { label: '活跃用户', value: response.activeUsers },
-            { label: '总订单数', value: response.totalOrders },
-            { label: '待处理订单', value: response.pendingOrders }
-        ]
-        if (response.weeklyStats) {
-            initChart(response.weeklyStats)
-        }
-    } catch (error) {
-        ElMessage.error(error.message)
-    } finally {
-        loading.value = false
+  loading.value = true
+  try {
+    const response = await productStore.fetchProductStats()
+    statistics.value = [
+      { label: '总用户数', value: response.totalUsers },
+      { label: '活跃用户', value: response.activeUsers },
+      { label: '总订单数', value: response.totalOrders },
+      { label: '待处理订单', value: response.pendingOrders }
+    ]
+    if (response.weeklyStats) {
+      initChart(response.weeklyStats)
     }
+  } catch (error) {
+    showMessage('获取数据失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 const initChart = (data) => {

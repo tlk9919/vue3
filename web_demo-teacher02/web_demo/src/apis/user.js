@@ -6,7 +6,7 @@ export const login = async (username, password) => {
     return response
 }
 
-// 登出
+// 退出登录
 export const logout = async () => {
     const response = await http.post('/logout')
     return response

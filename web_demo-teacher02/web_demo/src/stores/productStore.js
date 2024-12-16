@@ -23,7 +23,7 @@ export const useProductStore = defineStore('product', () => {
             products.value = res.recentProducts
             return res
         } catch (error) {
-            throw new Error('获取商品列表失败：' + error.message)
+            throw new Error('获取商品列表失败，请稍后重试')
         }
     }
 
@@ -34,7 +34,7 @@ export const useProductStore = defineStore('product', () => {
             products.value.push(res)
             return res
         } catch (error) {
-            throw new Error('添加商品失败：' + error.message)
+            throw new Error('添加商品失败，请检查输入数据')
         }
     }
 
@@ -48,7 +48,7 @@ export const useProductStore = defineStore('product', () => {
             }
             return res
         } catch (error) {
-            throw new Error('更新商品失败：' + error.message)
+            throw new Error('更新商品失败，请检查输入数据')
         }
     }
 
@@ -62,7 +62,7 @@ export const useProductStore = defineStore('product', () => {
             }
             return true
         } catch (error) {
-            throw new Error('删除商品失败：' + error.message)
+            throw new Error('删除商品失败，请稍后重试')
         }
     }
 

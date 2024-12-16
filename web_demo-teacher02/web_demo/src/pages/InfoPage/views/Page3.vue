@@ -31,7 +31,7 @@
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="confirmDelete(row)">删除</el-button>
+            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -74,13 +74,31 @@
         <el-button type="primary" @click="submitForm">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 删除确认对话框 -->
+    <el-dialog
+      v-model="deleteVisible"
+      title="提示"
+      width="300px"
+    >
+      <span>确定要删除该商品吗？</span>
+      <template #footer>
+        <span>
+          <el-button @click="deleteVisible = false">取消</el-button>
+          <el-button type="primary" @click="confirmDelete">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 消息对话框 -->
+    <message-dialog ref="messageDialogRef" />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import { useProductStore } from '@/stores/productStore'
+import MessageDialog from '@/components/MessageDialog.vue'
 
 const productStore = useProductStore()
 const products = ref([])
@@ -88,6 +106,10 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const dialogType = ref('add')
 const formRef = ref(null)
+const messageDialogRef = ref(null)
+// 添加删除相关的响应式变量
+const deleteVisible = ref(false)
+const deleteRow = ref(null)
 
 // 商品类别选项
 const categories = ['电子产品', '服装', '食品', '图书', '其他']
@@ -108,6 +130,10 @@ const rules = {
   stock: [{ required: true, message: '请输入商品库存', trigger: 'blur' }]
 }
 
+const showMessage = (message) => {
+  messageDialogRef.value?.showMessage(message)
+}
+
 // 获取商品列表
 const fetchData = async () => {
   loading.value = true
@@ -115,7 +141,7 @@ const fetchData = async () => {
     await productStore.fetchProducts()
     products.value = productStore.products
   } catch (error) {
-    ElMessage.error(error.message)
+    showMessage('获取数据失败')
   } finally {
     loading.value = false
   }
@@ -140,25 +166,21 @@ const handleEdit = (row) => {
   dialogVisible.value = true
 }
 
-// 确认删除
-const confirmDelete = (row) => {
-  ElMessageBox.confirm(
-    `确定要删除商品"${row.name}"吗？`,
-    '提示',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      await productStore.deleteProduct(row.id)
-      ElMessage.success('删除成功')
-      fetchData()
-    } catch (error) {
-      ElMessage.error(error.message)
-    }
-  })
+// 修改删除相关的方法
+const handleDelete = (row) => {
+  deleteRow.value = row
+  deleteVisible.value = true
+}
+
+const confirmDelete = async () => {
+  try {
+    await productStore.deleteProduct(deleteRow.value.id)
+    showMessage('删除商品成功')
+    deleteVisible.value = false
+    fetchData()
+  } catch (error) {
+    showMessage(error.message || '删除失败')
+  }
 }
 
 // 提交表单
@@ -170,15 +192,15 @@ const submitForm = async () => {
       try {
         if (dialogType.value === 'add') {
           await productStore.addProduct(form.value)
-          ElMessage.success('添加成功')
+          showMessage('添加商品成功')
         } else {
           await productStore.updateProduct(form.value.id, form.value)
-          ElMessage.success('更新成功')
+          showMessage('更新商���成功')
         }
         dialogVisible.value = false
         fetchData()
       } catch (error) {
-        ElMessage.error(error.message)
+        showMessage(error.message || '操作失败')
       }
     }
   })
