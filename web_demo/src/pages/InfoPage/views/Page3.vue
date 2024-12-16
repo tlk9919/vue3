@@ -139,7 +139,8 @@ const fetchData = async () => {
   loading.value = true
   try {
     await productStore.fetchProducts()
-    products.value = productStore.products
+    products.value = productStore.products.recentProducts || []
+    console.log('商品数据:', products.value)
   } catch (error) {
     showMessage('获取数据失败')
   } finally {
@@ -195,7 +196,7 @@ const submitForm = async () => {
           showMessage('添加商品成功')
         } else {
           await productStore.updateProduct(form.value.id, form.value)
-          showMessage('更新商���成功')
+          showMessage('更新商品成功')
         }
         dialogVisible.value = false
         fetchData()

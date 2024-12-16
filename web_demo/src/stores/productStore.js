@@ -20,7 +20,7 @@ export const useProductStore = defineStore('product', () => {
     const fetchProducts = async () => {
         try {
             const res = await getProductsAPI()
-            products.value = res.recentProducts
+            products.value = res
             return res
         } catch (error) {
             throw new Error('获取商品列表失败，请稍后重试')

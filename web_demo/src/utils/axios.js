@@ -3,9 +3,6 @@ import {useUserStore} from "@/stores/userStore.js";
 
 //创建一个axios的实例
 const instance = axios.create({
-    //baseURL 访问路径的前缀
-    //timeout 请求超时的时间
-    //headers 统一设置的全局请求头
     baseURL: '/api',
     timeout: 3000,
     headers: {

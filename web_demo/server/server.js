@@ -1,293 +1,291 @@
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const mysql = require('mysql2/promise');
 
-const app = express()
-
-// 中间件
-app.use(express.json());
+const app = express();
 app.use(cors());
+app.use(express.json());
+
+// 数据库连接配置
+const dbConfig = {
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: 'root',
+    database: 'vue_admin_db'
+};
+
+// 创建数据库连接池
+const pool = mysql.createPool(dbConfig);
+
+// 测试数据库连接
+pool.getConnection()
+    .then(connection => {
+        console.log('数据库连接成功');
+        connection.release();
+    })
+    .catch(err => {
+        console.error('数据库连接失败:', err);
+    });
 
 // 认证中间件
 const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]
-    if (token == null) {
-        return res.sendStatus(401)
+    const token = req.headers['authorization'];
+    
+    if (!token) {
+        return res.status(401).json({ 
+            code: 401,
+            message: '未提供token' 
+        });
+    }
+
+    if (token === 'Bearer dummy-token') {
+        next();
     } else {
-        jwt.verify(token, 'secret_key', (err, user) => {
-            if (err) {
-                return res.sendStatus(403)
+        res.status(401).json({ 
+            code: 401,
+            message: 'token无效' 
+        });
+    }
+};
+
+// 登录接口
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        console.log('尝试登录:', { username, password });
+        const [rows] = await pool.query(
+            'SELECT * FROM users WHERE username = ? AND password = ?',
+            [username, password]
+        );
+        console.log('查询结果:', rows);
+        
+        if (rows.length > 0) {
+            res.json({
+                code: 200,
+                message: '登录成功',
+                accessToken: 'dummy-token',
+                userInfo: {
+                    username: rows[0].username,
+                    name: rows[0].name
+                }
+            });
+        } else {
+            res.status(401).json({
+                code: 401,
+                message: '用户名或密码错误'
+            });
+        }
+    } catch (error) {
+        console.error('登录错误:', error);
+        console.error('错误详情:', error.message);
+        res.status(500).json({
+            code: 500,
+            message: '服务器错误'
+        });
+    }
+});
+
+// 获取用户列表
+app.get('/api/users', authenticateToken, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM users');
+        res.json(rows);
+    } catch (error) {
+        console.error('获取用户列表错误:', error);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
+// 添加用户
+app.post('/api/users', authenticateToken, async (req, res) => {
+    const userData = req.body;
+    try {
+        const [result] = await pool.query(
+            'INSERT INTO users (username, password, name, age, address, phone) VALUES (?, ?, ?, ?, ?, ?)',
+            [userData.username, userData.password, userData.name, userData.age, userData.address, userData.phone]
+        );
+        res.json({ id: result.insertId, ...userData });
+    } catch (error) {
+        console.error('添加用户错误:', error);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
+// 更新用户
+app.put('/api/users/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const userData = req.body;
+    try {
+        await pool.query(
+            'UPDATE users SET name = ?, age = ?, address = ?, phone = ? WHERE id = ?',
+            [userData.name, userData.age, userData.address, userData.phone, id]
+        );
+        res.json({ id, ...userData });
+    } catch (error) {
+        console.error('更新用户错误:', error);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
+// 删除用户
+app.delete('/api/users/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM users WHERE id = ?', [id]);
+        res.json({ message: '删除成功' });
+    } catch (error) {
+        console.error('删除用户错误:', error);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
+// 获取商品列表
+app.get('/api/page3-data', authenticateToken, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT * FROM products');
+        res.json({
+            recentProducts: rows
+        });
+    } catch (error) {
+        console.error('获取商品列表错误:', error);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
+// 添加商品
+app.post('/api/page3-data', authenticateToken, async (req, res) => {
+    const productData = req.body;
+    try {
+        const [result] = await pool.query(
+            'INSERT INTO products (name, category, price, stock) VALUES (?, ?, ?, ?)',
+            [productData.name, productData.category, productData.price, productData.stock]
+        );
+        res.json({
+            recentProducts: [{ id: result.insertId, ...productData }]
+        });
+    } catch (error) {
+        console.error('添加商品错误:', error);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
+// 更新商品
+app.put('/api/page3-data/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    const productData = req.body;
+    try {
+        await pool.query(
+            'UPDATE products SET name = ?, category = ?, price = ?, stock = ? WHERE id = ?',
+            [productData.name, productData.category, productData.price, productData.stock, id]
+        );
+        res.json({
+            recentProducts: [{ id, ...productData }]
+        });
+    } catch (error) {
+        console.error('更新商品错误:', error);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
+// 删除商品
+app.delete('/api/page3-data/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM products WHERE id = ?', [id]);
+        res.json({
+            recentProducts: [],
+            message: '删除成功'
+        });
+    } catch (error) {
+        console.error('删除商品错误:', error);
+        res.status(500).json({ message: '服务器错误' });
+    }
+});
+
+// 获取统计数据
+app.get('/api/page2-data', authenticateToken, async (req, res) => {
+    try {
+        // 获取用户总数
+        const [userRows] = await pool.query('SELECT COUNT(*) as count FROM users');
+        const totalUsers = userRows[0].count;
+
+        // 获取商品总数
+        const [productRows] = await pool.query('SELECT COUNT(*) as count FROM products');
+        const totalProducts = productRows[0].count;
+
+        // 获取库存总量
+        const [stockRows] = await pool.query('SELECT SUM(stock) as total FROM products');
+        const totalStock = stockRows[0].total || 0;
+
+        // 获取商品总价值
+        const [valueRows] = await pool.query('SELECT SUM(price * stock) as total FROM products');
+        const totalValue = valueRows[0].total || 0;
+
+        res.json({
+            totalUsers,
+            activeUsers: Math.floor(totalUsers * 0.8), // 假设80%是活跃用户
+            totalOrders: totalProducts,
+            pendingOrders: Math.floor(totalProducts * 0.2), // 假设20%是待处理订单
+            weeklyStats: {
+                labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+                values: [totalUsers, totalProducts, totalStock, totalValue, totalUsers * 2, totalProducts * 2, totalStock * 2]
             }
-            req.user = user;
-            next()
-        })
+        });
+    } catch (error) {
+        console.error('获取统计数据错误:', error);
+        res.status(500).json({ message: '服务器错误' });
     }
-}
+});
 
-// 统一的模拟数据源
-const db = {
-    // 认证数据
-    auth: {
-        '1': {
-            password: '1',
-            tokens: []
-        }
-    },
-    // 用户数据 - 添加更多用户信息
-    users: [
-        { id: 1, name: '张三', age: 25, address: '北京市朝阳区', phone: '13800138000', lastLogin: '2024-03-20', status: 'active' },
-        { id: 2, name: '李四', age: 30, address: '上海市浦东新区', phone: '13900139000', lastLogin: '2024-03-19', status: 'active' },
-        { id: 3, name: '王五', age: 28, address: '广州市天河区', phone: '13700137000', lastLogin: '2024-03-15', status: 'inactive' }
-    ],
-    // 商品数据 - 添加更多商品信息
-    products: [
-        { 
-            id: 1, 
-            name: 'iPhone 13', 
-            category: '电子产品', 
-            price: 6999, 
-            stock: 100,
-            sales: 50,
-            rating: 4.8,
-            supplier: '供应商A',
-            createTime: '2024-01-01'
-        },
-        { 
-            id: 2, 
-            name: '休闲裤', 
-            category: '服装', 
-            price: 199, 
-            stock: 500,
-            sales: 200,
-            rating: 4.5,
-            supplier: '供应商B',
-            createTime: '2024-02-01'
-        },
-        { 
-            id: 3, 
-            name: '零食大礼包', 
-            category: '食品', 
-            price: 99, 
-            stock: 1000,
-            sales: 800,
-            rating: 4.7,
-            supplier: '供应商C',
-            createTime: '2024-03-01'
-        }
-    ],
-    // 订单数据
-    orders: [
-        {
-            id: 1,
-            userId: 1,
-            products: [
-                { productId: 1, quantity: 1, price: 6999 },
-                { productId: 2, quantity: 2, price: 199 }
-            ],
-            totalAmount: 7397,
-            status: 'completed',
-            createTime: '2024-03-19'
-        },
-        {
-            id: 2,
-            userId: 2,
-            products: [
-                { productId: 3, quantity: 5, price: 99 }
-            ],
-            totalAmount: 495,
-            status: 'pending',
-            createTime: '2024-03-20'
-        }
-    ],
-    // 其他配置数据
-    categories: ['电子产品', '服装', '食品', '图书', '其他'],
-    suppliers: ['供应商A', '供应商B', '供应商C'],
-    menu: [{
-        name: 'InfoPage',
-        path: '/InfoPage',
-        title: '系统管理',
-        children: [
-            { name: 'Page1', path: '/InfoPage/Page1', title: '用户管理' },
-            { name: "Page2", path: '/InfoPage/Page2', title: '数据统计' },
-            { name: "Page3", path: '/InfoPage/Page3', title: '商品管理' }
-        ]
-    }]
-}
-
-// 登录路由
-app.post('/api/login', (req, res) => {
-    const {username, password} = req.body
-    console.log(username, password)
-    const user = db.auth[username]
-    if (user && user.password === password) {
-        const accessToken = jwt.sign({username}, 'secret_key', {expiresIn: '1h'})
-        user.tokens.push(accessToken)
-        res.status(200).json({accessToken})
-    } else {
-        res.status(401).json({
-            message: 'Invalid Credentials'
-        })
-    }
-})
-
-// 菜单路由
+// 获取菜单数据
 app.get('/api/menu', authenticateToken, (req, res) => {
-    res.status(200).json(db.menu)
-})
-
-// 用户 CRUD
-app.get('/api/users', authenticateToken, (req, res) => {
-    res.status(200).json(db.users)
-})
-
-app.post('/api/users', authenticateToken, (req, res) => {
-    console.log('收到添加用户请求:', req.body)
-    const newUser = {
-        id: Date.now(),
-        ...req.body
-    }
-    db.users.push(newUser)
-    res.status(200).json(newUser)
-})
-
-app.put('/api/users/:id', authenticateToken, (req, res) => {
-    const { id } = req.params
-    const index = db.users.findIndex(user => user.id === parseInt(id))
-    db.users[index] = { ...req.body, id: parseInt(id) }
-    res.status(200).json(db.users[index])
-})
-
-app.delete('/api/users/:id', authenticateToken, (req, res) => {
-    const { id } = req.params
-    const index = db.users.findIndex(user => user.id === parseInt(id))
-    db.users.splice(index, 1)
-    res.status(200).json({ message: 'success' })
-})
-
-// Page2 数据路由 - 修改为真实数据统计
-app.get('/api/page2-data', authenticateToken, (req, res) => {
-    // 计算实际统计数据
-    const totalUsers = db.users.length
-    const activeUsers = db.users.filter(user => user.status === 'active').length
-    const totalOrders = db.orders.length
-    const pendingOrders = db.orders.filter(order => order.status === 'pending').length
-    
-    // 计算每日销售数据（最近7天）
-    const today = new Date()
-    const last7Days = Array.from({length: 7}, (_, i) => {
-        const date = new Date(today)
-        date.setDate(date.getDate() - i)
-        return date.toISOString().split('T')[0]
-    }).reverse()
-
-    // 模拟每日销售数据
-    const dailySales = last7Days.map(date => {
-        const sales = db.orders
-            .filter(order => order.createTime.startsWith(date))
-            .reduce((sum, order) => sum + order.totalAmount, 0)
-        return sales || Math.floor(Math.random() * 1000) // 如果没有数据则随机生成
-    })
-
-    const statisticsData = {
-        totalUsers,
-        activeUsers,
-        totalOrders,
-        pendingOrders,
-        weeklyStats: {
-            labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-            values: dailySales
+    const menuData = [
+        {
+            path: '/InfoPage/Page1',
+            name: 'Page1',
+            title: '用户管理'
+        },
+        {
+            path: '/InfoPage/Page2',
+            name: 'Page2',
+            title: '数据统计'
+        },
+        {
+            path: '/InfoPage/Page3',
+            name: 'Page3',
+            title: '商品管理'
         }
+    ];
+    res.json(menuData);
+});
+
+// 图表数据
+app.get('/api/data', authenticateToken, async (req, res) => {
+    try {
+        // 获取每个类别的商品数量
+        const [rows] = await pool.query(`
+            SELECT category, COUNT(*) as count 
+            FROM products 
+            GROUP BY category
+        `);
+
+        const xAxisData = rows.map(row => row.category);
+        const seriesData = rows.map(row => row.count);
+
+        res.json({
+            title: '商品类别统计',
+            xAxisData,
+            seriesData
+        });
+    } catch (error) {
+        console.error('获取图表数据错误:', error);
+        res.status(500).json({ message: '服务器错误' });
     }
-    res.status(200).json(statisticsData)
-})
+});
 
-// Page3 商品相关路由 - 返回更多商品信息
-app.get('/api/page3-data', authenticateToken, (req, res) => {
-    // 计算每个商品的销售情况
-    const productsWithStats = db.products.map(product => {
-        const productOrders = db.orders.filter(order => 
-            order.products.some(p => p.productId === product.id)
-        )
-        const totalSales = productOrders.length
-        const totalRevenue = productOrders.reduce((sum, order) => {
-            const productInOrder = order.products.find(p => p.productId === product.id)
-            return sum + (productInOrder ? productInOrder.price * productInOrder.quantity : 0)
-        }, 0)
-
-        return {
-            ...product,
-            totalSales,
-            totalRevenue
-        }
-    })
-
-    res.status(200).json({
-        categories: db.categories,
-        suppliers: db.suppliers,
-        recentProducts: productsWithStats
-    })
-})
-
-app.post('/api/page3-data', authenticateToken, (req, res) => {
-    const newProduct = {
-        id: Date.now(),
-        ...req.body
-    }
-    db.products.push(newProduct)
-    res.status(200).json(newProduct)
-})
-
-app.put('/api/page3-data/:id', authenticateToken, (req, res) => {
-    const { id } = req.params
-    const index = db.products.findIndex(product => product.id === parseInt(id))
-    db.products[index] = { ...req.body, id: parseInt(id) }
-    res.status(200).json(db.products[index])
-})
-
-app.delete('/api/page3-data/:id', authenticateToken, (req, res) => {
-    const { id } = req.params
-    const index = db.products.findIndex(product => product.id === parseInt(id))
-    db.products.splice(index, 1)
-    res.status(200).json({ message: 'success' })
-})
-
-// 图表数据路由 - 使用真实数据
-app.get('/api/data', authenticateToken, (req, res) => {
-    // 获取销量前5的商品
-    const topProducts = [...db.products]
-        .sort((a, b) => b.sales - a.sales)
-        .slice(0, 5)
-
-    const chartData = {
-        xAxisData: topProducts.map(p => p.name),
-        seriesData: topProducts.map(p => p.sales),
-        title: '热销商品TOP5'
-    }
-    res.status(200).json(chartData)
-})
-
-// 登出路由
-app.post('/api/logout', authenticateToken, (req, res) => {
-    const authHeader = req.headers['authorization']
-    const token = authHeader && authHeader.split(' ')[1]
-    
-    if (token) {
-        // 遍历所有用户，找到对应token并移除
-        Object.values(db.auth).forEach(user => {
-            const tokenIndex = user.tokens.indexOf(token)
-            if (tokenIndex !== -1) {
-                user.tokens.splice(tokenIndex, 1)
-            }
-        })
-        res.status(200).json({ message: 'Logout successful' })
-    } else {
-        res.status(400).json({ message: 'No token provided' })
-    }
-})
-
-const PORT = process.env.PORT || 5050;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`)
-})
+const port = 5050;
+app.listen(port, () => {
+    console.log(`服务器运行在 http://localhost:${port}`);
+});
 
