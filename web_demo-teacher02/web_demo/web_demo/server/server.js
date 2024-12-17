@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const mysql = require('mysql2/promise');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(cors());
@@ -30,23 +31,20 @@ pool.getConnection()
 
 // 认证中间件
 const authenticateToken = (req, res, next) => {
-    const token = req.headers['authorization'];
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
     
-    if (!token) {
-        return res.status(401).json({ 
-            code: 401,
-            message: '未提供token' 
-        });
+    if (token == null) {
+        return res.sendStatus(401);
     }
 
-    if (token === 'Bearer dummy-token') {
+    jwt.verify(token, 'secret_key', (err, user) => {
+        if (err) {
+            return res.sendStatus(403);
+        }
+        req.user = user;
         next();
-    } else {
-        res.status(401).json({ 
-            code: 401,
-            message: 'token无效' 
-        });
-    }
+    });
 };
 
 // 登录接口
@@ -61,10 +59,17 @@ app.post('/login', async (req, res) => {
         console.log('查询结果:', rows);
         
         if (rows.length > 0) {
+            // 创建 JWT token
+            const token = jwt.sign(
+                { id: rows[0].id, username: rows[0].username },
+                'secret_key',
+                { expiresIn: '24h' }
+            );
+
             res.json({
                 code: 200,
                 message: '登录成功',
-                accessToken: 'dummy-token',
+                accessToken: token,  // 返回 JWT token
                 userInfo: {
                     username: rows[0].username,
                     name: rows[0].name
